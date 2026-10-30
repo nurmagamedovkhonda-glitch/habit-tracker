@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<title>Habit Tracker</title>
+<style>
+:root{
+  --bg:#0f1115;--card:#181b22;--card2:#20242d;--line:#2a2f3a;--text:#e9ecf2;--muted:#8b93a3;
+  --accent:#4ade80;--accent2:#22c55e;--danger:#f87171;--warn:#fbbf24;--radius:14px;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){--bg:#f4f5f7;--card:#fff;--card2:#f0f2f5;--line:#e3e6eb;--text:#151821;--muted:#6b7280;--accent:#16a34a;--accent2:#15803d}
+}
+:root.tg.tg{--bg:var(--tg-theme-bg-color);--card:var(--tg-theme-secondary-bg-color);--card2:var(--tg-theme-bg-color);--text:var(--tg-theme-text-color);--muted:var(--tg-theme-hint-color);--line:color-mix(in srgb,var(--tg-theme-hint-color) 25%,transparent)}
+html.tg header{padding-top:10px}
+.sync{font-size:11px;color:var(--muted)}
+:root[data-theme="light"]{--bg:#f4f5f7;--card:#fff;--card2:#f0f2f5;--line:#e3e6eb;--text:#151821;--muted:#6b7280;--accent:#16a34a;--accent2:#15803d}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,sans-serif}
+body{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+header{position:sticky;top:0;z-index:5;background:var(--bg);padding:calc(10px + env(safe-area-inset-top)) 16px 8px;border-bottom:1px solid var(--line)}
+h1{font-size:20px;margin:0}
+.sub{color:var(--muted);font-size:13px}
+main{padding:12px 16px;max-width:640px;margin:0 auto}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:10px}
+.row{display:flex;align-items:center;gap:10px}
+.between{justify-content:space-between}
+.grow{flex:1;min-width:0}
+.dot{width:10px;height:10px;border-radius:50%;flex:none}
+.name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meta{color:var(--muted);font-size:12px}
+button,.btn{font:inherit;color:var(--text);background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:9px 12px;cursor:pointer}
+button:active{transform:scale(.97)}
+.primary{background:var(--accent);color:#06130a;border-color:transparent;font-weight:600}
+.danger{color:var(--danger)}
+.icon{width:40px;height:40px;padding:0;display:inline-flex;align-items:center;justify-content:center;font-size:18px}
+input,select,textarea{font:inherit;color:var(--text);background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:9px 10px;width:100%}
+input[type=number]{width:96px;text-align:center}
+label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}
+.check{width:44px;height:44px;border-radius:12px;border:2px solid var(--line);background:transparent;font-size:22px;padding:0}
+.check.on{background:var(--accent);border-color:var(--accent);color:#06130a}
+.scale{display:flex;gap:4px;flex-wrap:wrap;margin-top:10px}
+.scale button{flex:1;min-width:26px;padding:7px 0;font-size:13px}
+.scale button.on{background:var(--accent);color:#06130a;border-color:transparent;font-weight:700}
+.progress{height:4px;background:var(--card2);border-radius:4px;margin-top:10px;overflow:hidden}
+.progress>div{height:100%;background:var(--accent)}
+.streak{font-size:12px;color:var(--warn);white-space:nowrap}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:10}
+nav button{flex:1;border:0;background:none;border-radius:0;padding:10px 0 12px;color:var(--muted);font-size:11px;display:flex;flex-direction:column;align-items:center;gap:2px}
+nav button span{font-size:20px}
+nav button.on{color:var(--accent)}
+.tabs{display:flex;gap:6px;margin:8px 0}
+.tabs button{flex:1;padding:7px 0;font-size:13px}
+.tabs button.on{background:var(--accent);color:#06130a;border-color:transparent;font-weight:600}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px}
+.stat{background:var(--card2);border-radius:10px;padding:10px}
+.stat b{display:block;font-size:20px}
+.stat small{color:var(--muted);font-size:12px}
+svg text{fill:var(--muted);font-size:10px}
+.empty{text-align:center;color:var(--muted);padding:40px 10px}
+dialog{border:1px solid var(--line);border-radius:18px;background:var(--card);color:var(--text);padding:16px;width:min(92vw,440px)}
+dialog::backdrop{background:rgba(0,0,0,.55)}
+.colors{display:flex;gap:8px;flex-wrap:wrap}
+.colors button{width:30px;height:30px;border-radius:50%;padding:0;border:2px solid transparent}
+.colors button.on{border-color:var(--text)}
+.toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:9px 14px;border-radius:10px;font-size:13px;opacity:0;transition:.25s;pointer-events:none;z-index:20}
+.toast.show{opacity:1}
+.heat{display:grid;grid-template-columns:repeat(auto-fill,minmax(14px,1fr));gap:3px;margin-top:10px}
+.heat div{aspect-ratio:1;border-radius:3px;background:var(--card2)}
+.note{width:100%;margin-top:8px;font-size:13px;padding:7px 9px}
+</style>
+</head>
+<body>
+<header>
+  <div class="row between">
+    <div><h1 id="title">Today</h1><div class="sub" id="subtitle"></div></div>
+    <div class="row" id="headerActions"></div>
+  </div>
+</header>
+<main id="view"></main>
+<nav>
+  <button data-tab="today" class="on"><span>✓</span>Today</button>
+  <button data-tab="stats"><span>📈</span>Stats</button>
+  <button data-tab="habits"><span>☰</span>Habits</button>
+  <button data-tab="settings"><span>⚙</span>Settings</button>
+</nav>
+<div class="toast" id="toast"></div>
+<dialog id="dlg"></dialog>
+
+<script>
+"use strict";
+/* ---------- storage ---------- */
+const KEY = "habit-tracker-v1";
+const COLORS = ["#4ade80","#60a5fa","#f472b6","#fbbf24","#a78bfa","#f87171","#2dd4bf","#fb923c"];
+let db = load();
+/* Telegram Cloud storage: whole DB is JSON, split into ≤4000-char chunks (keys d0..dN) + key "meta". */
+const TG = window.Telegram?.WebApp;
+const inTG = !!(TG && TG.initData);
+const hasCloud = inTG && TG.isVersionAtLeast && TG.isVersionAtLeast("6.9") && TG.CloudStorage;
+const CHUNK = 4000;
+const cs = {
+  get: keys => new Promise((res,rej)=>TG.CloudStorage.getItems(keys,(e,v)=>e?rej(new Error(e)):res(v||{}))),
+  set: (k,v) => new Promise((res,rej)=>TG.CloudStorage.setItem(k,v,(e,ok)=>e?rej(new Error(e)):res(ok))),
+  del: keys => new Promise((res,rej)=>TG.CloudStorage.removeItems(keys,(e,ok)=>e?rej(new Error(e)):res(ok))),
+};
+let lastChunks = [], syncTimer = null, syncState = hasCloud ? "…" : "local";
+async function cloudLoad(){
+  const m = (await cs.get(["meta"])).meta;
+  if(!m) return null;
+  const meta = JSON.parse(m);
+  const keys = Array.from({length:meta.n},(_,i)=>"d"+i);
+  const parts = [];
+  for(let i=0;i<keys.length;i+=50) Object.assign(parts, await cs.get(keys.slice(i,i+50)));
+  const json = keys.map(k=>parts[k]||"").join("");
+  lastChunks = keys.map(k=>parts[k]||"");
+  return JSON.parse(json);
+}
+async function cloudSave(){
+  const json = JSON.stringify(db);
+  const chunks = []; for(let i=0;i<json.length;i+=CHUNK) chunks.push(json.slice(i,i+CHUNK));
+  if(chunks.length>1000) throw new Error("Cloud limit reached — export & archive old data");
+  for(let i=0;i<chunks.length;i++) if(chunks[i]!==lastChunks[i]) await cs.set("d"+i, chunks[i]);
+  const extra = []; for(let i=chunks.length;i<lastChunks.length;i++) extra.push("d"+i);
+  if(extra.length) await cs.del(extra);
+  await cs.set("meta", JSON.stringify({n:chunks.length, updated:db.updated}));
+  lastChunks = chunks;
+}
+function scheduleSync(){
+  if(!hasCloud) return;
+  setSync("saving…");
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(async()=>{ try{ await cloudSave(); setSync("synced ✓"); }catch(e){ setSync("sync error"); toast("Cloud sync failed: "+e.message); } }, 700);
+}
+function setSync(t){ syncState=t; const el=document.getElementById("sync"); if(el) el.textContent="☁ "+t; }
+function load(){
+  try{ const d = JSON.parse(localStorage.getItem(KEY)); if(d && d.habits) return migrate(d); }catch(e){}
+  return {version:1, habits:[], entries:{}, notes:{}, settings:{theme:"auto"}};
+}
+function migrate(d){ d.entries ||= {}; d.notes ||= {}; d.settings ||= {theme:"auto"}; return d; }
+function save(){ db.updated=Date.now(); try{ localStorage.setItem(KEY, JSON.stringify(db)); }catch(e){} scheduleSync(); }
+
+/* ---------- dates ---------- */
+const pad = n => String(n).padStart(2,"0");
+const iso = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parse = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y,m-1,d); };
+const addDays = (s,n) => { const d = parse(s); d.setDate(d.getDate()+n); return iso(d); };
+const today = () => iso(new Date());
+const fmtLong = s => parse(s).toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"});
+const fmtShort = s => parse(s).toLocaleDateString("en-GB",{day:"numeric",month:"short"});
+
+/* ---------- habit logic ---------- */
+const uid = () => Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const active = () => db.habits.filter(h=>!h.archived).sort((a,b)=>(a.order??0)-(b.order??0));
+const val = (h,day) => db.entries[day]?.[h.id];
+function setVal(h,day,v){
+  db.entries[day] ||= {};
+  if(v===undefined || v===null || v==="" || (h.type==="check" && !v)) delete db.entries[day][h.id];
+  else db.entries[day][h.id] = v;
+  if(!Object.keys(db.entries[day]).length) delete db.entries[day];
+  save();
+}
+function isDone(h,day){
+  const v = val(h,day);
+  if(v===undefined) return false;
+  if(h.type==="check") return !!v;
+  if(h.target==null || h.target==="") return true;
+  return h.dir==="max" ? v <= h.target : v >= h.target;
+}
+function scheduled(h,day){ // frequency: days of week
+  if(!h.days || h.days.length===7) return true;
+  return h.days.includes(parse(day).getDay());
+}
+function streaks(h){
+  const start = effStart(h);
+  let cur=0, best=0, run=0;
+  // best: walk forward
+  for(let d=start; d<=today(); d=addDays(d,1)){
+    if(!scheduled(h,d)) continue;
+    if(isDone(h,d)){ run++; best=Math.max(best,run); }
+    else if(d!==today()) run=0;
+  }
+  // current: walk backward; today not done does not break streak
+  let d=today();
+  if(scheduled(h,d) && !isDone(h,d)) d=addDays(d,-1);
+  while(d>=start){
+    if(scheduled(h,d)){ if(isDone(h,d)) cur++; else break; }
+    d=addDays(d,-1);
+  }
+  return {cur,best};
+}
+function effStart(h){ const f=firstEntry(h); const c=h.created||today(); return f && f<c ? f : c; }
+function firstEntry(h){ return Object.keys(db.entries).sort().find(k=>db.entries[k][h.id]!==undefined); }
+function goalText(h){
+  if(h.type==="check") return "Yes / No";
+  const u = h.unit ? " "+h.unit : "";
+  if(h.type==="scale") return `Scale ${h.min??1}–${h.max??10}`+(h.target!=null&&h.target!==""?` · goal ${h.dir==="max"?"≤":"≥"} ${h.target}`:"");
+  return h.target!=null && h.target!=="" ? `Goal ${h.dir==="max"?"≤":"≥"} ${h.target}${u}` : `Number${u}`;
+}
+
+/* ---------- ui helpers ---------- */
+const $ = s => document.querySelector(s);
+const esc = s => String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function toast(t){ const el=$("#toast"); el.textContent=t; el.classList.add("show"); clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove("show"),1800); }
+function applyTheme(){ if(inTG){ document.documentElement.removeAttribute("data-theme"); return; } const t=db.settings.theme; if(t==="auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme",t); }
+
+let state = {tab:"today", day:today(), statHabit:null, range:30};
+
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
+  state.tab=b.dataset.tab;
+  document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("on",x===b));
+  render(); scrollTo(0,0);
+});
+function render(){ ({today:renderToday,stats:renderStats,habits:renderHabits,settings:renderSettings})[state.tab](); }
+
+/* ---------- TODAY ---------- */
+function renderToday(){
+  const day = state.day, isToday = day===today();
+  $("#title").textContent = isToday ? "Today" : fmtShort(day);
+  $("#subtitle").textContent = fmtLong(day);
+  $("#headerActions").innerHTML = `
+    <button class="icon" id="prev">‹</button>
+    ${isToday?"":'<button class="icon" id="goToday" title="Today">●</button>'}
+    <button class="icon" id="next" ${isToday?"disabled style='opacity:.3'":""}>›</button>`;
+  $("#prev").onclick=()=>{state.day=addDays(day,-1);render();};
+  $("#next").onclick=()=>{ if(!isToday){state.day=addDays(day,1);render();} };
+  if($("#goToday")) $("#goToday").onclick=()=>{state.day=today();render();};
+
+  const hs = active().filter(h=>scheduled(h,day));
+  if(!active().length){
+    $("#view").innerHTML = `<div class="empty"><p>No metrics yet.</p><button class="primary" id="add0">+ Create first metric</button></div>`;
+    $("#add0").onclick=()=>editHabit(); return;
+  }
+  const done = hs.filter(h=>isDone(h,day)).length;
+  let html = `<div class="card"><div class="row between"><b>${done} / ${hs.length} done</b><span class="meta">${hs.length?Math.round(done/hs.length*100):0}%</span></div>
+    <div class="progress"><div style="width:${hs.length?done/hs.length*100:0}%"></div></div></div>`;
+  for(const h of hs){
+    const v = val(h,day), s = streaks(h), ok = isDone(h,day);
+    let control="", extra="";
+    if(h.type==="check"){
+      control = `<button class="check ${v?"on":""}" data-act="toggle" data-id="${h.id}">${v?"✓":""}</button>`;
+    } else if(h.type==="number"){
+      control = `<div class="row" style="gap:6px">
+        <button class="icon" data-act="dec" data-id="${h.id}">−</button>
+        <input type="number" inputmode="decimal" step="any" value="${v??""}" placeholder="—" data-act="num" data-id="${h.id}">
+        <button class="icon" data-act="inc" data-id="${h.id}">+</button></div>`;
+      if(h.target) extra = `<div class="progress"><div style="width:${Math.min(100,(v||0)/h.target*100)}%;${h.dir==="max"&&v>h.target?"background:var(--danger)":""}"></div></div>`;
+    } else {
+      const mn=h.min??1, mx=h.max??10;
+      extra = `<div class="scale">${Array.from({length:mx-mn+1},(_,i)=>mn+i).map(n=>`<button class="${v===n?"on":""}" data-act="scale" data-id="${h.id}" data-v="${n}">${n}</button>`).join("")}</div>`;
+    }
+    html += `<div class="card">
+      <div class="row">
+        <span class="dot" style="background:${h.color}"></span>
+        <div class="grow"><div class="name">${esc(h.name)} ${ok?"<span style='color:var(--accent)'>✓</span>":""}</div>
+        <div class="meta">${esc(goalText(h))}</div></div>
+        ${s.cur?`<span class="streak">🔥 ${s.cur}</span>`:""}
+        ${control}
+      </div>${extra}</div>`;
+  }
+  const hidden = active().length - hs.length;
+  if(hidden) html += `<div class="meta" style="text-align:center">${hidden} metric(s) not scheduled for this day</div>`;
+  html += `<div class="card"><label style="margin-top:0">Day note</label><textarea class="note" rows="2" id="dayNote" placeholder="Optional…">${esc(db.notes[day]||"")}</textarea></div>`;
+  $("#view").innerHTML = html;
+
+  $("#dayNote").onchange = e => { const t=e.target.value.trim(); if(t) db.notes[day]=t; else delete db.notes[day]; save(); };
+  $("#view").onclick = e => {
+    const b = e.target.closest("[data-act]"); if(!b || b.tagName==="INPUT") return;
+    const h = db.habits.find(x=>x.id===b.dataset.id); const v = val(h,day);
+    const step = h.step || 1;
+    if(b.dataset.act==="toggle") setVal(h,day,!v);
+    if(b.dataset.act==="inc") setVal(h,day,round((v||0)+step));
+    if(b.dataset.act==="dec") setVal(h,day,(v||0)-step<=0?undefined:round(v-step));
+    if(b.dataset.act==="scale") setVal(h,day,v===+b.dataset.v?undefined:+b.dataset.v);
+    haptic();
+    renderToday();
+  };
+  $("#view").querySelectorAll("input[data-act=num]").forEach(inp=>inp.onchange=()=>{
+    const h = db.habits.find(x=>x.id===inp.dataset.id);
+    const n = inp.value===""?undefined:parseFloat(inp.value.replace(",","."));
+    setVal(h,day, n===undefined||isNaN(n)?undefined:n); renderToday();
+  });
+}
+const round = n => Math.round(n*1000)/1000;
+
+/* ---------- HABITS ---------- */
+function renderHabits(){
+  $("#title").textContent="Metrics"; $("#subtitle").textContent=`${active().length} active`;
+  $("#headerActions").innerHTML=`<button class="primary" id="addH">+ New</button>`;
+  $("#addH").onclick=()=>editHabit();
+  const list = active(), arch = db.habits.filter(h=>h.archived);
+  if(!list.length && !arch.length){ $("#view").innerHTML=`<div class="empty">Tap “+ New” to create your first metric.</div>`; return; }
+  let html = list.map((h,i)=>`<div class="card"><div class="row">
+      <span class="dot" style="background:${h.color}"></span>
+      <div class="grow"><div class="name">${esc(h.name)}</div><div class="meta">${esc(goalText(h))}${h.days&&h.days.length<7?" · "+h.days.map(d=>"SMTWTFS"[d]).join(""):""}</div></div>
+      <button class="icon" data-up="${h.id}" ${i===0?"disabled style='opacity:.3'":""}>↑</button>
+      <button class="icon" data-edit="${h.id}">✎</button></div></div>`).join("");
+  if(arch.length) html += `<h3 class="meta" style="margin:18px 4px 8px">ARCHIVED</h3>` + arch.map(h=>`<div class="card" style="opacity:.6"><div class="row">
+      <span class="dot" style="background:${h.color}"></span><div class="grow name">${esc(h.name)}</div>
+      <button class="icon" data-edit="${h.id}">✎</button></div></div>`).join("");
+  $("#view").innerHTML = html;
+  $("#view").onclick = e => {
+    const ed=e.target.closest("[data-edit]"), up=e.target.closest("[data-up]");
+    if(ed) editHabit(db.habits.find(h=>h.id===ed.dataset.edit));
+    if(up){ const l=active(); const i=l.findIndex(h=>h.id===up.dataset.up);
+      [l[i-1],l[i]]=[l[i],l[i-1]]; l.forEach((h,k)=>h.order=k); save(); renderHabits(); }
+  };
+}
+
+function editHabit(h){
+  const isNew = !h;
+  h = h ? {...h} : {id:uid(), name:"", type:"check", unit:"", target:"", dir:"min", step:1, min:1, max:10, color:COLORS[db.habits.length%COLORS.length], days:[0,1,2,3,4,5,6], created:today(), order:db.habits.length};
+  const dlg = $("#dlg");
+  const draw = () => {
+    dlg.innerHTML = `<form method="dialog" id="hf">
+      <div class="row between"><h3 style="margin:0">${isNew?"New metric":"Edit metric"}</h3><button value="cancel" class="icon">✕</button></div>
+      <label>Name</label><input id="fName" value="${esc(h.name)}" placeholder="e.g. Water, Reading, Sleep" required maxlength="40">
+      <label>Type</label>
+      <div class="tabs">${[["check","Yes/No"],["number","Number"],["scale","Scale"]].map(([k,t])=>`<button type="button" data-type="${k}" class="${h.type===k?"on":""}">${t}</button>`).join("")}</div>
+      ${h.type==="number"?`
+        <div class="row"><div class="grow"><label>Unit</label><input id="fUnit" value="${esc(h.unit)}" placeholder="min, km, glasses…"></div>
+        <div><label>+/− step</label><input type="number" id="fStep" step="any" value="${h.step??1}"></div></div>`:""}
+      ${h.type==="scale"?`
+        <div class="row"><div class="grow"><label>Min</label><input type="number" id="fMin" value="${h.min??1}" style="width:100%"></div>
+        <div class="grow"><label>Max</label><input type="number" id="fMax" value="${h.max??10}" style="width:100%"></div></div>`:""}
+      ${h.type!=="check"?`
+        <div class="row"><div class="grow"><label>Goal (optional)</label>
+          <select id="fDir"><option value="min" ${h.dir!=="max"?"selected":""}>At least ≥</option><option value="max" ${h.dir==="max"?"selected":""}>At most ≤</option></select></div>
+        <div><label>Target</label><input type="number" step="any" id="fTarget" value="${h.target??""}" placeholder="—"></div></div>`:""}
+      <label>Days</label>
+      <div class="tabs">${["S","M","T","W","T","F","S"].map((d,i)=>`<button type="button" data-day="${i}" class="${h.days.includes(i)?"on":""}">${d}</button>`).join("")}</div>
+      <label>Color</label>
+      <div class="colors">${COLORS.map(c=>`<button type="button" data-color="${c}" class="${h.color===c?"on":""}" style="background:${c}"></button>`).join("")}</div>
+      <div class="row" style="margin-top:18px;gap:8px">
+        ${isNew?"":`<button type="button" id="fArch">${h.archived?"Restore":"Archive"}</button><button type="button" id="fDel" class="danger">Delete</button>`}
+        <div class="grow"></div><button class="primary" value="ok" id="fSave">Save</button>
+      </div></form>`;
+    const grab = () => {
+      h.name = $("#fName").value;
+      if($("#fUnit")) h.unit=$("#fUnit").value.trim();
+      if($("#fStep")) h.step=parseFloat($("#fStep").value)||1;
+      if($("#fMin")) h.min=parseInt($("#fMin").value)||0;
+      if($("#fMax")) h.max=parseInt($("#fMax").value)||10;
+      if($("#fDir")) h.dir=$("#fDir").value;
+      if($("#fTarget")) h.target = $("#fTarget").value===""?"":parseFloat($("#fTarget").value);
+    };
+    dlg.querySelectorAll("[data-type]").forEach(b=>b.onclick=()=>{grab();h.type=b.dataset.type;draw();});
+    dlg.querySelectorAll("[data-day]").forEach(b=>b.onclick=()=>{ const d=+b.dataset.day;
+      h.days = h.days.includes(d)?h.days.filter(x=>x!==d):[...h.days,d].sort(); if(!h.days.length) h.days=[d]; b.classList.toggle("on",h.days.includes(d)); });
+    dlg.querySelectorAll("[data-color]").forEach(b=>b.onclick=()=>{h.color=b.dataset.color;dlg.querySelectorAll("[data-color]").forEach(x=>x.classList.toggle("on",x===b));});
+    $("#fSave").onclick = e => {
+      e.preventDefault(); grab();
+      if(!h.name.trim()){ $("#fName").focus(); return; }
+      h.name=h.name.trim();
+      if(h.type==="scale" && h.max<=h.min){ toast("Max must be greater than Min"); return; }
+      if(h.type==="check"){ h.target=""; }
+      const i = db.habits.findIndex(x=>x.id===h.id);
+      if(i<0) db.habits.push(h); else db.habits[i]=h;
+      save(); dlg.close(); toast(isNew?"Metric created":"Saved"); render();
+    };
+    if($("#fArch")) $("#fArch").onclick=()=>{ h.archived=!h.archived; db.habits[db.habits.findIndex(x=>x.id===h.id)]=h; save(); dlg.close(); render(); };
+    if($("#fDel")) $("#fDel").onclick=async()=>{
+      if(!(await ask(`Delete “${h.name}” and ALL its history? Archive keeps history.`))) return;
+      db.habits = db.habits.filter(x=>x.id!==h.id);
+      for(const d in db.entries){ delete db.entries[d][h.id]; if(!Object.keys(db.entries[d]).length) delete db.entries[d]; }
+      save(); dlg.close(); toast("Deleted"); render();
+    };
+  };
+  draw(); dlg.showModal(); if(isNew) setTimeout(()=>$("#fName").focus(),50);
+}
+
+/* ---------- STATS ---------- */
+function renderStats(){
+  $("#title").textContent="Stats"; $("#headerActions").innerHTML="";
+  const list = db.habits.filter(h=>!h.archived);
+  if(!list.length){ $("#subtitle").textContent=""; $("#view").innerHTML=`<div class="empty">Create a metric to see stats.</div>`; return; }
+  if(!list.find(h=>h.id===state.statHabit)) state.statHabit = "__all";
+  const R = state.range;
+  $("#subtitle").textContent = `Last ${R} days`;
+  let html = `<select id="sh"><option value="__all">Overview — all metrics</option>${list.map(h=>`<option value="${h.id}" ${h.id===state.statHabit?"selected":""}>${esc(h.name)}</option>`).join("")}</select>
+    <div class="tabs">${[7,30,90,365].map(r=>`<button data-r="${r}" class="${R===r?"on":""}">${r===365?"1Y":r+"D"}</button>`).join("")}</div>`;
+  const days = Array.from({length:R},(_,i)=>addDays(today(),i-R+1));
+
+  if(state.statHabit==="__all"){
+    // daily completion rate
+    const rate = days.map(d=>{ const hs=list.filter(h=>scheduled(h,d)&&effStart(h)<=d); if(!hs.length) return null; return Math.round(hs.filter(h=>isDone(h,d)).length/hs.length*100); });
+    const valid = rate.filter(x=>x!=null);
+    html += `<div class="card"><b>Daily completion, %</b>${chart(days,rate,"var(--accent)",{max:100,bar:R<=31})}
+      <div class="stats"><div class="stat"><b>${valid.length?Math.round(valid.reduce((a,b)=>a+b,0)/valid.length):0}%</b><small>Average completion</small></div>
+      <div class="stat"><b>${valid.filter(x=>x===100).length}</b><small>Perfect days</small></div></div></div>`;
+    html += list.map(h=>{ const s=streaks(h); const sd=days.filter(d=>scheduled(h,d)&&effStart(h)<=d); const pc=sd.length?Math.round(sd.filter(d=>isDone(h,d)).length/sd.length*100):0;
+      return `<div class="card"><div class="row"><span class="dot" style="background:${h.color}"></span><div class="grow name">${esc(h.name)}</div>
+        <span class="streak">🔥 ${s.cur} · best ${s.best}</span><b style="width:44px;text-align:right">${pc}%</b></div>
+        <div class="progress"><div style="width:${pc}%;background:${h.color}"></div></div></div>`; }).join("");
+  } else {
+    const h = list.find(x=>x.id===state.statHabit);
+    const s = streaks(h);
+    const sd = days.filter(d=>scheduled(h,d)&&effStart(h)<=d);
+    const doneN = sd.filter(d=>isDone(h,d)).length;
+    html += `<div class="card"><div class="row"><span class="dot" style="background:${h.color}"></span><b class="grow">${esc(h.name)}</b><span class="meta">${esc(goalText(h))}</span></div>`;
+    if(h.type==="check"){
+      html += `<div class="heat">${days.map(d=>`<div title="${d}" style="${isDone(h,d)?`background:${h.color}`:scheduled(h,d)?"":"opacity:.3"}"></div>`).join("")}</div>`;
+      // rolling weekly completion
+      const roll = days.map((d,i)=>{ const w=days.slice(Math.max(0,i-6),i+1).filter(x=>scheduled(h,x)); return w.length?Math.round(w.filter(x=>isDone(h,x)).length/w.length*100):null; });
+      if(R>7) html += `<div class="meta" style="margin-top:12px">7-day rolling completion, %</div>${chart(days,roll,h.color,{max:100})}`;
+    } else {
+      const vals = days.map(d=>val(h,d)??null);
+      const nums = vals.filter(v=>v!=null);
+      html += chart(days,vals,h.color,{bar:R<=31,target:h.target===""?null:h.target,min:h.type==="scale"?(h.min??1):undefined,max:h.type==="scale"?(h.max??10):undefined});
+      const avg = nums.length?nums.reduce((a,b)=>a+b,0)/nums.length:0;
+      const u = h.unit?" "+esc(h.unit):"";
+      html += `<div class="stats">
+        <div class="stat"><b>${fmtN(avg)}${u}</b><small>Average (logged days)</small></div>
+        <div class="stat"><b>${fmtN(nums.reduce((a,b)=>a+b,0))}${u}</b><small>Total</small></div>
+        <div class="stat"><b>${nums.length?fmtN(Math.max(...nums)):"—"}</b><small>Max</small></div>
+        <div class="stat"><b>${nums.length?fmtN(Math.min(...nums)):"—"}</b><small>Min</small></div></div>`;
+    }
+    html += `<div class="stats">
+      <div class="stat"><b>🔥 ${s.cur}</b><small>Current streak</small></div>
+      <div class="stat"><b>${s.best}</b><small>Best streak</small></div>
+      <div class="stat"><b>${sd.length?Math.round(doneN/sd.length*100):0}%</b><small>Goal hit rate</small></div>
+      <div class="stat"><b>${doneN}/${sd.length}</b><small>Days hit / scheduled</small></div></div></div>`;
+    // recent log
+    const log = days.slice().reverse().filter(d=>val(h,d)!==undefined).slice(0,10);
+    if(log.length && h.type!=="check") html += `<div class="card"><b>Recent entries</b>${log.map(d=>`<div class="row between" style="padding:6px 0;border-bottom:1px solid var(--line)"><span class="meta">${fmtShort(d)}</span><span>${fmtN(val(h,d))}${h.unit?" "+esc(h.unit):""} ${isDone(h,d)?"✓":""}</span></div>`).join("")}</div>`;
+  }
+  $("#view").innerHTML = html;
+  $("#sh").onchange = e => { state.statHabit=e.target.value; renderStats(); };
+  $("#view").querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{state.range=+b.dataset.r;renderStats();});
+}
+const fmtN = n => Number.isInteger(n)?String(n):(Math.round(n*10)/10).toString();
+
+function chart(days, vals, color, o={}){
+  const W=340,H=150,P={l:28,r:6,t:8,b:18};
+  const nums = vals.filter(v=>v!=null);
+  if(!nums.length) return `<div class="empty" style="padding:24px">No data in this period</div>`;
+  let mn = o.min ?? Math.min(0,...nums), mx = o.max ?? Math.max(...nums, o.target??-Infinity);
+  if(mx===mn) mx=mn+1;
+  const n=vals.length, cw=(W-P.l-P.r)/n;
+  const x = i => P.l + cw*i + cw/2, y = v => P.t + (H-P.t-P.b)*(1-(v-mn)/(mx-mn));
+  let g = "";
+  for(let k=0;k<=4;k++){ const v=mn+(mx-mn)*k/4; g+=`<line x1="${P.l}" x2="${W-P.r}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${P.l-4}" y="${y(v)+3}" text-anchor="end">${fmtN(v)}</text>`; }
+  const step = Math.ceil(n/6);
+  days.forEach((d,i)=>{ if(i%step===0 || i===n-1 && n<=7) g+=`<text x="${x(i)}" y="${H-4}" text-anchor="middle">${fmtShort(d).replace(" "," ")}</text>`; });
+  let marks="";
+  if(o.bar){
+    vals.forEach((v,i)=>{ if(v==null) return; const bw=Math.max(2,cw*.7); marks+=`<rect x="${x(i)-bw/2}" y="${y(v)}" width="${bw}" height="${Math.max(1,y(mn)-y(v))}" rx="2" fill="${color}"/>`; });
+  } else {
+    let path="", pen=false;
+    vals.forEach((v,i)=>{ if(v==null){pen=false;return;} path+=(pen?"L":"M")+x(i).toFixed(1)+","+y(v).toFixed(1); pen=true; });
+    marks=`<path d="${path}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+    if(n<=90) vals.forEach((v,i)=>{ if(v!=null) marks+=`<circle cx="${x(i)}" cy="${y(v)}" r="${n>31?1.5:2.5}" fill="${color}"/>`; });
+  }
+  if(o.target!=null && o.target!=="") marks+=`<line x1="${P.l}" x2="${W-P.r}" y1="${y(o.target)}" y2="${y(o.target)}" stroke="var(--warn)" stroke-dasharray="4 3" stroke-width="1.2"/>`;
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;margin-top:8px">${g}${marks}</svg>`;
+}
+
+/* ---------- SETTINGS ---------- */
+function renderSettings(){
+  $("#title").textContent="Settings"; $("#subtitle").innerHTML=`<span class="sync" id="sync">☁ ${syncState}</span>`; $("#headerActions").innerHTML="";
+  const nE = Object.values(db.entries).reduce((a,o)=>a+Object.keys(o).length,0);
+  const size = JSON.stringify(db).length;
+  $("#view").innerHTML = `
+    ${inTG?"":`<div class="card"><b>Theme</b><div class="tabs">${["auto","light","dark"].map(t=>`<button data-theme="${t}" class="${db.settings.theme===t?"on":""}">${t[0].toUpperCase()+t.slice(1)}</button>`).join("")}</div></div>`}
+    <div class="card"><b>Storage</b><div class="meta" style="margin-top:4px">
+      ${hasCloud?"Telegram Cloud — synced across all your devices where you use Telegram.":inTG?"Your Telegram version is too old for cloud sync — data is stored on this device only. Update Telegram.":"Opened outside Telegram — data stored in this browser only."}<br>
+      ${db.habits.length} metrics · ${nE} entries · ${(size/1024).toFixed(1)} KB of ~4000 KB</div></div>
+    <div class="card"><b>Backup / transfer</b><div class="meta" style="margin:4px 0 10px">Copy JSON to save it (e.g. to “Saved Messages”), or paste a backup — including one exported from the offline PWA.</div>
+      <div class="row" style="flex-wrap:wrap;gap:8px">
+        <button id="exJ" class="primary">Copy JSON backup</button>
+        <button id="exC">Copy CSV</button>
+        <button id="imJ">Import JSON</button>
+      </div>
+      <div class="meta" style="margin-top:8px">${db.settings.lastBackup?"Last backup: "+db.settings.lastBackup:"No backup yet"}</div></div>
+    <div class="card"><b>Danger zone</b><div style="margin-top:10px"><button id="wipe" class="danger">Erase all data</button></div></div>
+    <div class="meta" style="text-align:center;margin-top:16px">Habit Tracker Mini App v1.0</div>`;
+  $("#view").querySelectorAll("[data-theme]").forEach(b=>b.onclick=()=>{db.settings.theme=b.dataset.theme;save();applyTheme();renderSettings();});
+  $("#exJ").onclick=()=>{ db.settings.lastBackup=today(); save(); textDialog("JSON backup", JSON.stringify(db)); };
+  $("#exC").onclick=()=>{
+    const hs=db.habits; const rows=[["date",...hs.map(h=>h.name+(h.unit?` (${h.unit})`:"")),"note"]];
+    const ds=[...new Set([...Object.keys(db.entries),...Object.keys(db.notes)])].sort();
+    ds.forEach(d=>rows.push([d,...hs.map(h=>{const v=db.entries[d]?.[h.id];return v===true?1:v??"";}),db.notes[d]||""]));
+    textDialog("CSV", rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(",")).join("\n"));
+  };
+  $("#imJ").onclick=()=>textDialog("Paste JSON backup","",async txt=>{
+    try{ const d=JSON.parse(txt); if(!Array.isArray(d.habits)||typeof d.entries!=="object") throw new Error("Not a tracker backup");
+      if(!(await ask(`Replace current data with backup (${d.habits.length} metrics)?`))) return false;
+      db=migrate(d); save(); applyTheme(); toast("Imported"); render(); return true;
+    }catch(err){ toast("Import failed: "+err.message); return false; }
+  });
+  $("#wipe").onclick=async()=>{ if(await ask("Erase ALL metrics and history? This cannot be undone.") && await ask("Really erase?")){
+    db={version:1,habits:[],entries:{},notes:{},settings:{theme:"auto"}}; save(); render(); toast("Erased"); } };
+}
+function textDialog(title, text, onImport){
+  const dlg=$("#dlg");
+  dlg.innerHTML=`<div class="row between"><h3 style="margin:0">${esc(title)}</h3><button class="icon" id="tdX">✕</button></div>
+    <textarea id="tdT" rows="10" style="margin-top:10px;font:12px ui-monospace,monospace" ${onImport?'placeholder="Paste here…"':"readonly"}>${esc(text)}</textarea>
+    <div class="row" style="margin-top:12px;justify-content:flex-end"><button class="primary" id="tdOk">${onImport?"Import":"Copy"}</button></div>`;
+  dlg.showModal();
+  $("#tdX").onclick=()=>dlg.close();
+  $("#tdOk").onclick=async()=>{
+    const t=$("#tdT");
+    if(onImport){ if(await onImport(t.value)) dlg.close(); return; }
+    try{ await navigator.clipboard.writeText(t.value); toast("Copied"); }
+    catch(e){ t.select(); document.execCommand("copy"); toast("Copied"); }
+  };
+}
+function ask(msg){
+  if(inTG && TG.isVersionAtLeast("6.2")) return new Promise(r=>TG.showConfirm(msg, ok=>r(!!ok)));
+  return Promise.resolve(confirm(msg));
+}
+function haptic(){
+  if(inTG && TG.isVersionAtLeast("6.1")) TG.HapticFeedback.selectionChanged();
+  else if(navigator.vibrate) navigator.vibrate(10);
+}
+
+/* ---------- boot ---------- */
+if(inTG){
+  document.documentElement.classList.add("tg");
+  TG.ready(); TG.expand();
+  if(TG.isVersionAtLeast("7.7")) TG.disableVerticalSwipes();
+}
+applyTheme(); render();
+if(hasCloud){
+  cloudLoad().then(remote=>{
+    if(remote && (!db.updated || (remote.updated||0) >= db.updated)){ db=migrate(remote); try{localStorage.setItem(KEY,JSON.stringify(db));}catch(e){} applyTheme(); render(); setSync("synced ✓"); }
+    else if(db.habits.length){ scheduleSync(); }
+    else setSync("synced ✓");
+  }).catch(e=>{ setSync("offline"); toast("Cloud load failed: "+e.message); });
+}
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden && state.tab==="today" && state.day<today() && state._lastToday!==today()){ state.day=today(); render(); } state._lastToday=today(); });
+state._lastToday=today();
+if(navigator.storage?.persist) navigator.storage.persist();
+</script>
+</body>
+</html>
